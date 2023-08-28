@@ -20,7 +20,7 @@ function traerdatos() {
                 detalle += "<td>" + result[i].nvuelo + "</td>";
                 detalle += "<td>" + result[i].destino + "</td>";
                 detalle += "<td><button type='button' class='btn btn-outline-primary' data-bs-toggle='modal' data-bs-target='#exampleModal' onClick='traerInfo(" + result[i].id + ")'>Actualizar</button></td>";
-                detalle += "<td><button type='button' class='btn btn-outline-danger'>Eliminar</button></td>";
+                detalle += "<td><button type='button' class='btn btn-outline-danger' onclick='eliminarRegistro(" + result[i].id + ")'>Eliminar</button></td>";
                 detalle += "</tr>";
             });
             $("#tabla_vuelos tbody").html(detalle);
@@ -55,59 +55,37 @@ function traerInfo(id) {
     });
 }
 
-function guardarVuelo() {
-    var id = $('#id').val();
 
-    if (id) {
-        // Si hay un ID, es una actualización
-        actualizarRegistro();
+function guardarRegistro(isActualizacion) {
+    var id = $('#id').val();
+    var nombre_aerolinea = $('#nombre_aerolinea').val();
+    var nvuelo = $('#nvuelo').val();
+    var destino = $('#destino').val();
+
+    var postData = {
+        nombre_aerolinea: nombre_aerolinea,
+        nvuelo: nvuelo,
+        destino: destino
+    };
+
+    if (isActualizacion) {
+        postData.actualizar = 'actualizar';
+        postData.id = id;
     } else {
-        // Si no hay un ID, es una inserción
-        guardarNuevoRegistro();
+        postData.guardar = 'guardar';
     }
-}
-
-function actualizarRegistro() {
-    var id = $('#id').val();
 
     $.ajax({
         url: "../controller/aplic.php",
         type: "POST",
-        data: {
-            actualizar: 'actualizar',
-            id: id,
-            nombre_aerolinea: $('#nombre_aerolinea').val(),
-            nvuelo: $('#nvuelo').val(),
-            destino: $('#destino').val()
-        },
-        dataType: "text",
-        success: function(result) {
-            alert(result);
-            $('#exampleModal').modal('hide');
-            traerdatos();
-        },
-        error: function(result) {
-            console.error("Este maneja errores", result);
-        }
-    });
-}
-
-function guardarNuevoRegistro() {
-    $.ajax({
-        url: "../controller/aplic.php",
-        type: "POST",
-        data: {
-            guardar: 'guardar',
-            nombre_aerolinea: $('#nombre_aerolinea').val(),
-            nvuelo: $('#nvuelo').val(),
-            destino: $('#destino').val()
-        },
+        data: postData,
         dataType: "text",
         success: function(result) {
             alert(result);
             $('#nombre_aerolinea').val('');
             $('#nvuelo').val('');
             $('#destino').val('');
+            $('#id').val(''); // Limpia el campo ID después de una inserción o actualización
             $('#exampleModal').modal('hide');
             traerdatos();
         },
@@ -115,4 +93,36 @@ function guardarNuevoRegistro() {
             console.error("Este maneja errores", result);
         }
     });
+}
+
+function guardarVuelo() {
+    var id = $('#id').val();
+
+    if (id) {
+        // Si hay un ID, es una actualización
+        guardarRegistro(true);
+    } else {
+        // Si no hay un ID, es una inserción
+        guardarRegistro(false);
+    }
+}
+function eliminarRegistro(id) {
+    if (confirm("¿Estás seguro de que deseas eliminar este registro?")) {
+        $.ajax({
+            url: "../controller/aplic.php",
+            type: "POST",
+            data: {
+                eliminar: 'eliminar',
+                id: id
+            },
+            dataType: "text",
+            success: function(result) {
+                alert(result);
+                traerdatos(); // Vuelve a cargar los datos después de la eliminación
+            },
+            error: function(result) {
+                console.error("Este maneja errores", result);
+            }
+        });
+    }
 }
